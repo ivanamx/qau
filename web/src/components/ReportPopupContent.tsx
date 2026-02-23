@@ -54,7 +54,7 @@ export default function ReportPopupContent({ report, onVoteSuccess }: ReportPopu
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className="text-xs text-[var(--text-muted)]">
           {report.colonia ? `${report.colonia} · ` : ''}
-          {report.voteCount != null && report.voteCount > 0 ? `+${report.voteCount} reportes` : 'Sin reportes'}
+          {report.voteCount != null && report.voteCount > 0 ? `+${report.voteCount} reportes extra` : 'Sin reportes extra'}
         </span>
         {report.status === 'PENDING' && accessToken && (
           <button

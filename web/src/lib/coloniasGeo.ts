@@ -34,7 +34,7 @@ export function getColoniaNames(geojson: ColoniasGeoJSON | null): string[] {
   const names = geojson.features
     .map((f) => f.properties?.nom_asen)
     .filter((n): n is string => typeof n === 'string' && n.length > 0);
-  return [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
 }
 
 /** Devuelve el nombre de la colonia (nom_asen) que contiene el punto (lat, lng), o null */

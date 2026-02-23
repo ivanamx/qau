@@ -65,7 +65,7 @@ function ReportCard({ report, categoryLabel, isSelected, onSelect }: { report: R
           </p>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
             {format(new Date(report.createdAt), "d MMM yyyy, HH:mm", { locale: es })}
-            {report.voteCount != null && report.voteCount > 0 && ` · +${report.voteCount} apoyos`}
+            {report.voteCount != null && report.voteCount > 0 && ` · +${report.voteCount} reportes`}
           </p>
         </div>
       </div>

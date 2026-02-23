@@ -47,12 +47,24 @@ export function parseAirQualityFromHtml(html: string): {
 // Página alcaldía (opc=...). El dropdown envía delegaciones=13 para Cuauhtémoc; sin eso no viene la card.
 const CDMX_URL = "https://www.aire.cdmx.gob.mx/default.php?opc=%27YqBhnmI=%27&delegaciones=13";
 
+const CORS_PROXIES: ((url: string) => string)[] = [
+  (url) => "https://corsproxy.io/?" + encodeURIComponent(url),
+  (url) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
+];
+
 async function fetchWithProxy(url: string, controller: AbortController): Promise<string> {
-  // corsproxy.io: suele aceptar bien URLs largas (evita 400 de otros proxies)
-  const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
-  const res = await fetch(proxyUrl, { signal: controller.signal });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.text();
+  let lastErr: Error | null = null;
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const proxyUrl = proxyFn(url);
+      const res = await fetch(proxyUrl, { signal: controller.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.text();
+    } catch (e) {
+      lastErr = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+  throw lastErr ?? new Error("Proxy request failed");
 }
 
 /**

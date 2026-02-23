@@ -19,26 +19,78 @@ export async function registerRoutes(app: FastifyInstance) {
   });
 
   // Calidad del aire: simular el POST del formulario (delegaciones=13 = Cuauhtémoc).
+  // En servidores con OpenSSL estricto, SEDEMA falla con "dh key too small"; usamos proxy CORS como fallback.
+  const CDMX_URL_POST = "https://www.aire.cdmx.gob.mx/default.php?opc=%27YqBhnmI=%27";
+  const CDMX_URL_GET = CDMX_URL_POST + "&delegaciones=13";
+  const PROXIES: ((url: string) => string)[] = [
+    (url) => "https://corsproxy.io/?" + encodeURIComponent(url),
+    (url) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
+  ];
+
   app.get('/api/v1/air-quality', async (request, reply) => {
-    const CDMX_URL = "https://www.aire.cdmx.gob.mx/default.php?opc=%27YqBhnmI=%27";
-    try {
+    async function fetchHtml(): Promise<string> {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
-      const res = await fetch(CDMX_URL, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          Accept: 'text/html,application/xhtml+xml',
-          'Accept-Language': 'es-MX,es;q=0.9',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'delegaciones=13',
-      });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const html = await res.text();
+      try {
+        const res = await fetch(CDMX_URL_POST, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml',
+            'Accept-Language': 'es-MX,es;q=0.9',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: 'delegaciones=13',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    async function fetchHtmlViaProxy(proxyFn: (url: string) => string): Promise<string> {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      try {
+        const proxyUrl = proxyFn(CDMX_URL_GET);
+        const res = await fetch(proxyUrl, {
+          method: 'GET',
+          signal: controller.signal,
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml',
+          },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    try {
+      let html: string;
+      try {
+        html = await fetchHtml();
+      } catch (directErr) {
+        request.log.info({ err: directErr }, 'air-quality direct fetch failed, trying CORS proxy');
+        let lastErr: unknown = directErr;
+        for (const proxyFn of PROXIES) {
+          try {
+            html = await fetchHtmlViaProxy(proxyFn);
+            lastErr = null;
+            break;
+          } catch (e) {
+            lastErr = e;
+            request.log.warn({ err: e }, 'air-quality proxy fetch failed');
+          }
+        }
+        if (lastErr) throw lastErr;
+      }
       const rawHtml = html.replace(/\s+/g, ' ');
 
       const lateralStart = html.search(/id=["']lateral_renglondosdatoscalidadaireahora["']/i);

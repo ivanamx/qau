@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import MarketplaceMap from '@/components/MarketplaceMap';
@@ -14,7 +14,7 @@ import { fetchAlcaldiaGeoJSON, isPointInAlcaldia } from '@/lib/alcaldiaGeo';
 import { fetchColoniasGeoJSON, getColoniaNames, getColoniaForPoint, type ColoniasGeoJSON } from '@/lib/coloniasGeo';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function MarketplacePage() {
+function MarketplacePageContent() {
   const searchParams = useSearchParams();
   const { canAccessDashboard } = useAuth();
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -198,5 +198,13 @@ export default function MarketplacePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-[var(--bg-base)] text-[var(--text-muted)]">Cargando…</div>}>
+      <MarketplacePageContent />
+    </Suspense>
   );
 }

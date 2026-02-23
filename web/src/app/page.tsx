@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { startOfMonth, endOfMonth, subHours } from 'date-fns';
 import MapView from '@/components/Map';
@@ -22,7 +22,7 @@ import {
 import { fetchColoniasGeoJSON, getColoniaNames, getColoniaForPoint, type ColoniasGeoJSON } from '@/lib/coloniasGeo';
 import { MAP_CENTER_VIEW, MAP_CENTER_VIEW_MOBILE, MAP_ZOOM } from '@/lib/constants';
 
-export default function HomePage() {
+function HomePageContent() {
   const { accessToken, userProfile, setAccessToken, canAccessDashboard } = useAuth();
   const [categories, setCategories] = useState<ReportCategory[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
@@ -361,5 +361,13 @@ export default function HomePage() {
         }}
       />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-[var(--bg-base)] text-[var(--text-muted)]">Cargando…</div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }

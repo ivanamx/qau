@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  users       User[]
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String?   @unique
+  phone         String?   @unique
+  passwordHash  String    @map("password_hash")
+  roleId        String    @map("role_id")
+  colonia       String?
+  verifiedAt   DateTime? @map("verified_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  role   Role    @relation(fields: [roleId], references: [id])
+  reports Report[]
+  reportVotes ReportVote[]
+  statusChanges ReportStatusHistory[] @relation("changed_by")
+  refreshTokens RefreshToken[]
+}
+
+model Citizen {
+  id           String   @id @default(uuid())
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String   @map("password_hash")
+  nombre       String?  @map("nombre")
+  apellidos    String?  @map("apellidos")
+  colonia      String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  reports         Report[]
+  reportVotes     CitizenReportVote[]
+  refreshTokens   CitizenRefreshToken[]
+
+  @@index([email])
+  @@index([phone])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model CitizenRefreshToken {
+  id         String   @id @default(uuid())
+  citizenId  String   @map("citizen_id")
+  token      String   @unique
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  citizen Citizen @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+
+  @@index([citizenId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+enum ReportStatus {
+  PENDING
+  CHANNELED
+  IN_PROGRESS
+  RESOLVED
+}
+
+model Report {
+  id          String    @id @default(uuid())
+  userId      String?   @map("user_id")
+  citizenId   String?   @map("citizen_id")
+  category    String
+  description String
+  photoUrl    String    @map("photo_url")
+  latitude    Decimal   @db.Decimal(10, 8)
+  longitude   Decimal   @db.Decimal(11, 8)
+  colonia     String?
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user     User?    @relation(fields: [userId], references: [id])
+  citizen  Citizen? @relation(fields: [citizenId], references: [id])
+  votes    ReportVote[]
+  citizenVotes CitizenReportVote[]
+  statusHistory ReportStatusHistory[]
+
+  @@index([status])
+  @@index([category])
+  @@index([colonia])
+  @@index([createdAt])
+  @@index([latitude, longitude])
+  @@index([userId])
+  @@index([citizenId])
+}
+
+model ReportVote {
+  id        String   @id @default(uuid())
+  reportId  String   @map("report_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, userId])
+  @@index([reportId])
+  @@index([userId])
+}
+
+model CitizenReportVote {
+  id        String   @id @default(uuid())
+  reportId  String   @map("report_id")
+  citizenId String   @map("citizen_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  report  Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  citizen Citizen @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, citizenId])
+  @@index([reportId])
+  @@index([citizenId])
+}
+
+model ReportStatusHistory {
+  id          String       @id @default(uuid())
+  reportId    String       @map("report_id")
+  fromStatus  ReportStatus @map("from_status")
+  toStatus    ReportStatus @map("to_status")
+  changedById String?      @map("changed_by_id")
+  comment     String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  report    Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  changedBy User?  @relation("changed_by", fields: [changedById], references: [id])
+
+  @@index([reportId])
+  @@index([createdAt])
+}
+
+model Business {
+  id        String    @id @default(uuid())
+  placeId   String    @unique @map("place_id")
+  name      String
+  address   String?
+  latitude  Decimal?  @db.Decimal(10, 8)
+  longitude Decimal?  @db.Decimal(11, 8)
+  rating    Decimal?  @db.Decimal(3, 2)
+  category  String?
+  photoUrl  String?   @map("photo_url")
+  rawJson   Json?     @map("raw_json")
+  cachedAt  DateTime  @map("cached_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  offers Offer[]
+
+  @@index([category])
+  @@index([cachedAt])
+  @@index([latitude, longitude])
+}
+
+model Offer {
+  id          String   @id @default(uuid())
+  businessId  String   @map("business_id")
+  title       String
+  description String?
+  imageUrl    String?  @map("image_url")
+  validFrom   DateTime @map("valid_from")
+  validUntil  DateTime @map("valid_until")
+  conditions  String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([validFrom, validUntil])
+}

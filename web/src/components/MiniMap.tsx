@@ -46,6 +46,7 @@ export default function MiniMap({ lat, lng, zoom = 17, className = '' }: MiniMap
       mapRef.current = null;
       markerRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init map once; second effect updates view
   }, []);
 
   useEffect(() => {

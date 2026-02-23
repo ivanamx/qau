@@ -84,8 +84,8 @@ function ReportMarkersLeaflet({ reports, onVoteSuccess, onPopupOpenChange }: { r
 
     return () => {
       list.forEach(({ layer, root }) => {
-        try { map.removeLayer(layer); } catch (_) { /* already removed */ }
-        try { root.unmount(); } catch (_) { /* ignore */ }
+        try { map.removeLayer(layer); } catch { /* already removed */ }
+        try { root.unmount(); } catch { /* ignore */ }
       });
       list.length = 0;
     };

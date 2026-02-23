@@ -78,18 +78,17 @@ export async function registerRoutes(app: FastifyInstance) {
         html = await fetchHtml();
       } catch (directErr) {
         request.log.info({ err: directErr }, 'air-quality direct fetch failed, trying CORS proxy');
-        let lastErr: unknown = directErr;
+        let proxyHtml: string | null = null;
         for (const proxyFn of PROXIES) {
           try {
-            html = await fetchHtmlViaProxy(proxyFn);
-            lastErr = null;
+            proxyHtml = await fetchHtmlViaProxy(proxyFn);
             break;
           } catch (e) {
-            lastErr = e;
             request.log.warn({ err: e }, 'air-quality proxy fetch failed');
           }
         }
-        if (lastErr) throw lastErr;
+        if (proxyHtml === null) throw new Error('All air-quality proxies failed');
+        html = proxyHtml;
       }
       const rawHtml = html.replace(/\s+/g, ' ');
 

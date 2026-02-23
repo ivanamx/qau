@@ -16,7 +16,7 @@ type MiniMapProps = {
 export default function MiniMap({ lat, lng, zoom = 17, className = '' }: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
+  const markerRef = useRef<L.CircleMarker | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;

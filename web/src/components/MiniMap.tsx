@@ -29,7 +29,6 @@ export default function MiniMap({ lat, lng, zoom = 17, className = '' }: MiniMap
       doubleClickZoom: false,
       boxZoom: false,
       keyboard: false,
-      tap: false,
     });
     L.tileLayer(DARK_TILES, { maxZoom: 19 }).addTo(map);
     const marker = L.circleMarker([lat, lng], {

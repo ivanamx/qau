@@ -10,8 +10,7 @@ export type AirQuality = {
 };
 
 export async function fetchAirQuality(): Promise<AirQuality> {
-  // Usa la ruta de Next.js (mismo origen) para evitar CORS y no depender del backend
-  const res = await fetch('/api/air-quality');
+  const res = await fetch(`${API_URL}/api/v1/air-quality`);
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
     throw new Error((json as { error?: string }).error || 'Error al cargar calidad del aire');

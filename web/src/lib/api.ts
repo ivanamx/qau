@@ -11,6 +11,10 @@ export type AirQuality = {
 
 export async function fetchAirQuality(): Promise<AirQuality> {
   const res = await fetch(`${API_URL}/api/v1/air-quality`);
+  // 502/503: backend o SEDEMA caído; devolver vacío para mostrar "--" y no disparar fallback (evita 403 de corsproxy)
+  if (res.status === 502 || res.status === 503) {
+    return { source: 'SEDEMA', alcaldia: 'Cuauhtémoc' };
+  }
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
     throw new Error((json as { error?: string }).error || 'Error al cargar calidad del aire');

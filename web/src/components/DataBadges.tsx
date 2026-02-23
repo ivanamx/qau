@@ -21,7 +21,7 @@ function airQualityColor(index: string | null): string {
 
 /**
  * Badges: fecha/hora, temperatura, calidad del aire (Cuauhtémoc, SEDEMA), contingencia.
- * Primero intenta la API (servidor); si no hay datos, intenta desde el navegador vía proxy CORS.
+ * Datos vía API; si SEDEMA no responde, el backend devuelve 200 sin datos y se muestra "--".
  */
 export default function DataBadges() {
   const now = new Date();
@@ -48,25 +48,14 @@ export default function DataBadges() {
           apply(data.index ?? null, data.temperature ?? null);
           return;
         }
-        // Sin datos del servidor: intentar desde el navegador (proxy CORS)
         return fetchAirQualityFromBrowser()
           .then(({ index, temperature: t }) => apply(index, t))
-          .catch(() => {
-            if (!cancelled) {
-              setAirQuality(null);
-              setTemperature(null);
-            }
-          });
+          .catch(() => { if (!cancelled) apply(null, null); });
       })
       .catch(() =>
         fetchAirQualityFromBrowser()
           .then(({ index, temperature: t }) => apply(index, t))
-          .catch(() => {
-            if (!cancelled) {
-              setAirQuality(null);
-              setTemperature(null);
-            }
-          })
+          .catch(() => { if (!cancelled) apply(null, null); })
       )
       .finally(() => {
         if (!cancelled) setLoading(false);

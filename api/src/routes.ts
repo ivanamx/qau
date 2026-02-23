@@ -93,10 +93,11 @@ export async function registerRoutes(app: FastifyInstance) {
         alcaldia: 'Cuauhtémoc',
       };
     } catch (err) {
-      request.log.error({ err }, 'air-quality fetch failed');
-      return reply.code(502).send({
-        error: 'No se pudo obtener la calidad del aire',
-        details: err instanceof Error ? err.message : String(err),
+      request.log.warn({ err }, 'air-quality fetch failed (SEDEMA no disponible)');
+      // 200 con datos vacíos: la UI muestra "--" sin 502 ni fallback a proxy CORS (evita 403)
+      return reply.code(200).send({
+        source: 'SEDEMA',
+        alcaldia: 'Cuauhtémoc',
       });
     }
   });

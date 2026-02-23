@@ -159,6 +159,7 @@ export type DashboardReport = Report;
 export type DashboardReportsParams = {
   status?: string;
   category?: string;
+  colonia?: string;
   since?: string;
   limit?: number;
   offset?: number;

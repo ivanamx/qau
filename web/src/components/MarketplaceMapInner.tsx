@@ -82,7 +82,7 @@ export default function MarketplaceMapInner({ businesses, centerOn }: Props) {
     >
       <TileLayer url={DARK_TILES} maxZoom={19} />
       <SetDefaultView />
-      <AlcaldiaBounds />
+      <AlcaldiaBounds center={MAP_CENTER} zoom={MAP_ZOOM} />
       <BusinessMarkers businesses={businesses} />
       <MapFlyTo center={centerOn} />
     </MapContainer>

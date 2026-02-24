@@ -5,6 +5,14 @@ import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import type { ColoniasGeoJSON } from '@/lib/coloniasGeo';
 
+/** Pane por debajo de los marcadores para que estos reciban siempre el clic. */
+const BELOW_MARKERS_PANE = 'belowMarkers';
+function ensureBelowMarkersPane(map: L.Map) {
+  if (map.getPane(BELOW_MARKERS_PANE)) return;
+  const pane = map.createPane(BELOW_MARKERS_PANE);
+  pane.style.zIndex = '350';
+}
+
 /** Estilo del contorno de la colonia seleccionada (línea delgada y atenuada) */
 const COLONIA_STYLE = {
   color: 'rgba(245, 158, 11, 0.6)',
@@ -44,8 +52,9 @@ export default function ColoniaHighlight({ selectedColonia, coloniasGeojson }: C
       features: [feature],
     };
 
+    ensureBelowMarkersPane(map);
     const layer = L.geoJSON(geojson, {
-      style: () => COLONIA_STYLE,
+      style: () => ({ ...COLONIA_STYLE, pane: BELOW_MARKERS_PANE }),
     });
     layer.addTo(map);
     layerRef.current = layer;

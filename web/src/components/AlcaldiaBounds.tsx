@@ -6,6 +6,13 @@ import L from 'leaflet';
 
 const GEOJSON_URL = '/geojson/alcaldia-cuauhtemoc.json';
 const MIN_ZOOM = 13;
+/** Pane por debajo de los marcadores para que estos reciban siempre el clic. */
+const BELOW_MARKERS_PANE = 'belowMarkers';
+function ensureBelowMarkersPane(map: L.Map) {
+  if (map.getPane(BELOW_MARKERS_PANE)) return;
+  const pane = map.createPane(BELOW_MARKERS_PANE);
+  pane.style.zIndex = '350';
+}
 const POLYGON_STYLE = {
   color: '#0d9488',
   weight: 2,
@@ -41,8 +48,9 @@ export default function AlcaldiaBounds({ center, zoom }: Props) {
       })
       .then((geojson) => {
         if (!geojson) return;
+        ensureBelowMarkersPane(map);
         layer = L.geoJSON(geojson, {
-          style: () => POLYGON_STYLE,
+          style: () => ({ ...POLYGON_STYLE, pane: BELOW_MARKERS_PANE }),
         });
         const bounds = layer.getBounds();
         if (!bounds.isValid()) return;
